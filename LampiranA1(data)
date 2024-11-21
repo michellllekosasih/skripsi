@@ -1,0 +1,55 @@
+library(readr)
+library(readxl)
+library(dplyr)
+library(writexl)
+library(tidyr)
+library(lubridate)
+library(car)
+library(statmod)
+library(tweedie)
+library(TDboost)
+library(MASS)
+library(caret)
+library(cplm)
+library(ggplot2)
+library(pdp)
+library(mgcv)
+library(rBayesianOptimization)
+
+setwd("~/Library/Mobile Documents/com~apple~CloudDocs/SEM A3/Tugas Akhir 1") 
+
+data <- read_excel("data edited.xlsx", 7)
+data1 = data
+data1 = data1[!is.na(data1$Length),]
+options(scipen = 999)
+data1  = subset(data1, select = -c(N_doors, Premium, ID) )
+data1$loss_cost = data1$Cost_claims_year/data1$Exposure
+data1 = data1 %>% relocate(loss_cost, .after=Cost_per_claims)
+
+#####DATA
+data1$Type_risk = as.factor(data1$Type_risk)
+data1$Area = as.factor(data1$Area)
+data1$Type_fuel = as.factor(data1$Type_fuel)
+data1$Driving_exp = as.numeric(data1$Driving_exp)
+data1$Age = as.numeric(data1$Age)
+data1$Vehicle_age = as.numeric(data1$Vehicle_age)
+data1$Second_driver = as.factor(data1$Second_driver)
+
+data1$Age <- cut(data1$Age, breaks = c(18, 30, 50, 65, 100),
+                    labels = c(1, 2, 3, 4), include.lowest = TRUE, right = FALSE)
+data1$Driving_exp <- cut(data1$Driving_exp, breaks = c(0, 8, 23, 47, 66),
+                         labels = c(1, 2, 3, 4), include.lowest = TRUE, right = FALSE)
+data1$Vehicle_age <- cut(data1$Vehicle_age, breaks = c(0, 5, 10, 30, 66),
+                        labels = c(1, 2, 3, 4), include.lowest = TRUE, right = TRUE)
+
+
+(data2015 = filter(data1, format(data1$Date_last_renewal, "%Y") == "2015"))
+(data2016 = filter(data1, format(data1$Date_last_renewal, "%Y") == "2016"))
+(data2017 = filter(data1, format(data1$Date_last_renewal, "%Y") == "2017"))
+(data2018 = filter(data1, format(data1$Date_last_renewal, "%Y") == "2018"))
+
+data2015 = subset(data2015, select = -c(Date_last_renewal) )
+data2016 = subset(data2016, select = -c(Date_last_renewal) )
+data2017 = subset(data2017, select = -c(Date_last_renewal) )
+data2018 = subset(data2018, select = -c(Date_last_renewal) )
+data1 = subset(data1, select = -c(Date_last_renewal) )
