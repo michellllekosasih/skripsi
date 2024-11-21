@@ -1,0 +1,110 @@
+#####2015#####
+set.seed(15)
+train_index <- sample(1:nrow(data2015), nrow(data2015)*0.8)
+#train dataset
+train2015 <- data2015[train_index, ]
+#test dataset
+test2015 <- data2015[-train_index, ]
+
+tweedie_model2015a <- cpglm(Cost_claims_year ~ Type_risk + Area + Second_driver + Vehicle_age + Power + Cylinder_capacity + Value_vehicle 
+                           + Driving_exp + Age + Type_fuel + Length + Weight, data = train2015, link = "log", offset=log(Exposure))
+summary(tweedie_model2015a)
+
+GLMTpred2015 = predict(tweedie_model2015a, newdata = test2015, type = "response") 
+
+(rmse15 <- sqrt(mean((test2015$loss_cost - GLMTpred2015)^2)))
+
+#REAL
+mean(data2015$loss_cost)
+mean(test2015$loss_cost)
+mean(train2015$loss_cost)
+mean(data2016$loss_cost)
+
+#MODEL
+mean(tweedie_model2015a$fitted.values)
+
+#PREDS
+mean(GLMTpred2015)
+
+
+#####2016#####
+set.seed(27)
+train_index <- sample(1:nrow(data2016), nrow(data2016)*0.8)
+#train dataset
+train2016 <- data2016[train_index, ]
+#test dataset
+test2016 <- data2016[-train_index, ]
+
+mean(data2016$loss_cost)
+mean(train2016$loss_cost)
+mean(test2016$loss_cost)
+mean(data2017$loss_cost)
+
+tweedie_model2016a <- cpglm(Cost_claims_year ~ Type_risk + Area + Second_driver + Vehicle_age + Power + Cylinder_capacity + Value_vehicle 
+                            + Driving_exp + Age + Type_fuel + Length + Weight, data = train2016, link = "log", offset=log(Exposure))
+summary(tweedie_model2016a)
+
+GLMTpred2016 = predict(tweedie_model2016a, newdata = test2016, type = "response") 
+
+(rmse16 <- sqrt(mean((test2016$loss_cost - GLMTpred2016)^2)))
+
+#MODEL
+mean(tweedie_model2016a$fitted.values)
+
+#PREDS
+mean(GLMTpred2016)
+
+#####2017#####
+set.seed(13)
+train_index <- sample(1:nrow(data2017), nrow(data2017)*0.8)
+#train dataset
+train2017 <- data2017[train_index, ]
+#test dataset
+test2017 <- data2017[-train_index, ]
+
+#REAL
+mean(data2017$loss_cost)
+mean(test2017$loss_cost)
+mean(train2017$loss_cost)
+mean(data2018$loss_cost)
+
+tweedie_model2017a <- cpglm(Cost_claims_year ~ Type_risk + Area + Second_driver + Vehicle_age + Power + Cylinder_capacity + Value_vehicle 
+                            + Driving_exp + Age + Type_fuel + Length + Weight, data = train2017, link = "log", offset=log(Exposure))
+summary(tweedie_model2017a)
+
+GLMTpred2017 = predict(tweedie_model2017a, newdata = test2017, type = "response") 
+
+#MODEL
+mean(tweedie_model2017a$fitted.values)
+
+#PREDS
+mean(GLMTpred2017)
+
+(rmse17 <- sqrt(mean((test2017$loss_cost - GLMTpred2017)^2)))
+
+
+#####2018#####
+set.seed(20)
+train_index <- sample(1:nrow(data2018), nrow(data2018)*0.8)
+#train dataset
+train2018 <- data2018[train_index, ]
+#test dataset
+test2018 <- data2018[-train_index, ]
+
+#REAL
+mean(data2018$loss_cost)
+mean(test2018$loss_cost)
+mean(train2018$loss_cost)
+
+tweedie_model2018a <- cpglm(Cost_claims_year ~ Type_risk + Area + Second_driver + Vehicle_age + Power + Cylinder_capacity + Value_vehicle 
+                            + Driving_exp + Age + Type_fuel + Length + Weight, data = train2018, link = "log", offset=log(Exposure))
+summary(tweedie_model2018a)
+
+GLMTpred2018 = predict(tweedie_model2018a, newdata = test2018, type = "response") 
+
+#MODEL
+mean(tweedie_model2018a$fitted.values)
+
+#PREDS
+mean(GLMTpred2018)
+(rmse18 <- sqrt(mean((test2018$loss_cost - GLMTpred2018)^2)))
