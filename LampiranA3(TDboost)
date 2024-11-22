@@ -1,0 +1,437 @@
+#####2015#####
+set.seed(12)
+formula <- as.formula(loss_cost ~ Type_risk + Area + Second_driver + Vehicle_age + Power + Cylinder_capacity + Value_vehicle 
+                      + Driving_exp + Age + Type_fuel + Length + Weight)
+
+# Define the function to optimize
+optimize_function <- function(n.trees, interaction.depth, n.minobsinnode, shrinkage, bag.fraction, alpha) {
+  # Fit the model on the training set
+  model <- TDboost(formula = formula,
+                   data = train2015,
+                   distribution = list(name = "EDM", alpha = alpha),
+                   n.trees = round(n.trees), 
+                   interaction.depth = round(interaction.depth), 
+                   n.minobsinnode = round(n.minobsinnode),
+                   shrinkage = shrinkage,
+                   bag.fraction = bag.fraction,
+                   train.fraction = 1.0,
+                   cv.folds = 5,
+                   keep.data = TRUE,
+                   verbose = FALSE)
+  
+  # Return the average RMSE for optimization
+  return(list(Score = mean(model$cv.error), Pred = model$fit))
+}
+
+# Set the bounds for the hyperparameters
+bounds <- list(n.trees = c(50, 100), 
+               interaction.depth = c(1, 2), 
+               n.minobsinnode = c(5, 20), 
+               shrinkage = c(0.05, 0.3), 
+               bag.fraction = c(0.4, 0.6),
+               alpha = c(1.1, 1.999))
+
+# Initialize a data frame to store the best parameters from each run
+best_params <- data.frame()
+
+# Perform Bayesian optimization for 5 runs
+for(i in 1:5) {
+  opt_results <- BayesianOptimization(optimize_function, 
+                                      bounds = bounds, 
+                                      init_points = 10, 
+                                      n_iter = 1)
+  
+  # Retrieve best hyperparameters and store in the data frame
+  best_params <- rbind(best_params, data.frame(run = i, t(opt_results$Best_Par)))
+}
+
+# Print the best parameters
+print(best_params)
+
+# Write the best parameters to a CSV file
+write.csv(best_params, file = "best_params_tdboost2015.csv", row.names = FALSE)
+
+# Load the best parameters from the CSV file
+best_params2015 <- read.csv("/Users/michelle/Library/Mobile Documents/com~apple~CloudDocs/SEM A3/Tugas Akhir 1/best_params_tdboost2015.csv")
+
+# Initialize a list to store RMSE for each run
+rmse_list <- vector("list", 5)
+
+# Initialize a list to store standard deviation of RMSE for each run
+std_dev_rmse_list <- vector("list", 5)
+
+# Initialize a list to store models from each run
+models <- vector("list", 5)
+
+# Initialize a list to store predictions from each run
+preds_list <- vector("list", 5)
+
+# Iterate over the five sets of best parameters
+for (j in 1:5) {
+  best_params_run <- best_params[best_params$run == j, ]
+  best_params_run <- as.list(t(best_params_run[, -1]))  # Convert to list
+  
+  # Train the best model 5 times
+  for (i in 1:5) {
+    # Fit the model using the best parameters
+    TDboost2015t <- TDboost(formula = formula,
+                           data = train2015,
+                           distribution = list(name = "EDM", alpha = best_params_run[[6]]),
+                           n.trees = best_params_run[[1]],
+                           interaction.depth = round(best_params_run[[2]]), 
+                           n.minobsinnode = round(best_params_run[[3]]),
+                           shrinkage = best_params_run[[4]],
+                           bag.fraction = best_params_run[[5]],
+                           train.fraction = 1.0,
+                           cv.folds = 0,
+                           keep.data = TRUE,
+                           verbose = FALSE)
+    
+    # Predict on the evaluation data
+    preds1t <- predict.TDboost(TDboost2015t, newdata = test2015, n.trees =  best_params2015$n.trees[i], type="response")
+    
+    # Compute the RMSE for this run
+    rmse <- sqrt(mean((test2015$loss_cost - preds1t)^2))
+    
+    # Print the RMSE for this run
+    print(paste("RMSE for run", i, "of outer run", j, ":", rmse))
+    
+    # Store the RMSE and model
+    rmse_list[[j]][i] <- rmse
+    models[[j]][[i]] <- TDboost2015t
+    preds_list[[j]][[i]] <- preds1t
+  }
+  
+  # Compute the mean RMSE for this run
+  mean_rmse <- mean(rmse_list[[j]])
+  
+  # Compute the standard deviation of RMSE for this run
+  std_dev_rmse <- sd(rmse_list[[j]])
+  std_dev_rmse_list[[j]] <- std_dev_rmse
+  
+  # Print the mean RMSE and standard deviation of RMSE for this run
+  print(paste("Mean RMSE for outer run", j, ":", mean_rmse))
+  print(paste("Standard deviation of RMSE for outer run", j, ":", std_dev_rmse))
+}
+
+# Compute the mean RMSE for each run
+mean_rmse_list <- sapply(rmse_list, mean)
+
+# Find the model with the lowest mean RMSE
+mean_rmses <- sapply(rmse_list, mean)
+best_model_index <- which.min(mean_rmses)
+index <- which.min(rmse_list[[best_model_index]])
+best_model15 <- models[[best_model_index]][[index]]
+preds2015t <- preds_list[[best_model_index]][[index]]
+
+# Print the RMSE of the best model
+print(paste("RMSE of the best model:", mean_rmses[best_model_index]))
+preds2015t
+exp(best_model15$fit)
+
+mean(exp(best_model15$fit))
+mean(preds2015t)
+mean(test2015$loss_cost)
+mean(data2016$loss_cost)
+
+(rmse2015 <- sqrt(mean((test2015$loss_cost - preds2015t)^2)))
+
+summary(best_model15,
+        cBars=length(best_model15$var.names),
+        n.trees=best_model15$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=TRUE)
+
+#####2016#####
+set.seed(4)
+formula <- as.formula(loss_cost ~ Type_risk + Area + Second_driver + Vehicle_age + Power + Cylinder_capacity + Value_vehicle 
+                      + Driving_exp + Age + Type_fuel + Length + Weight)
+
+# Define the function to optimize
+optimize_function <- function(n.trees, interaction.depth, n.minobsinnode, shrinkage, bag.fraction, alpha) {
+  # Fit the model on the training set
+  model <- TDboost(formula = formula,
+                   data = train2016,
+                   distribution = list(name = "EDM", alpha = alpha),
+                   n.trees = round(n.trees), 
+                   interaction.depth = round(interaction.depth), 
+                   n.minobsinnode = round(n.minobsinnode),
+                   shrinkage = shrinkage,
+                   bag.fraction = bag.fraction,
+                   train.fraction = 1.0,
+                   cv.folds = 5,
+                   keep.data = TRUE,
+                   verbose = FALSE)
+  
+  # Return the average RMSE for optimization
+  return(list(Score = mean(model$cv.error), Pred = model$fit))
+}
+
+# Set the bounds for the hyperparameters
+bounds <- list(n.trees = c(50, 100), 
+               interaction.depth = c(1, 2), 
+               n.minobsinnode = c(5, 20), 
+               shrinkage = c(0.05, 0.3), 
+               bag.fraction = c(0.4, 0.6),
+               alpha = c(1.1, 1.999))
+
+# Initialize a data frame to store the best parameters from each run
+best_params <- data.frame()
+
+# Perform Bayesian optimization for 5 runs
+for(i in 1:5) {
+  opt_results <- BayesianOptimization(optimize_function, 
+                                      bounds = bounds, 
+                                      init_points = 10, 
+                                      n_iter = 1)
+  
+  # Retrieve best hyperparameters and store in the data frame
+  best_params <- rbind(best_params, data.frame(run = i, t(opt_results$Best_Par)))
+}
+
+# Print the best parameters
+print(best_params)
+
+# Write the best parameters to a CSV file
+write.csv(best_params, file = "best_params_tdboost2016.csv", row.names = FALSE)
+
+# Load the best parameters from the CSV file
+best_params2016 <- read.csv("/Users/michelle/Library/Mobile Documents/com~apple~CloudDocs/SEM A3/Tugas Akhir 1/best_params_tdboost2015.csv")
+
+# Initialize a list to store RMSE for each run
+rmse_list <- vector("list", 5)
+
+# Initialize a list to store standard deviation of RMSE for each run
+std_dev_rmse_list <- vector("list", 5)
+
+# Initialize a list to store models from each run
+models <- vector("list", 5)
+
+# Initialize a list to store predictions from each run
+preds_list <- vector("list", 5)
+
+# Iterate over the five sets of best parameters
+for (j in 1:5) {
+  best_params_run <- best_params[best_params$run == j, ]
+  best_params_run <- as.list(t(best_params_run[, -1]))  # Convert to list
+  
+  # Train the best model 5 times
+  for (i in 1:5) {
+    # Fit the model using the best parameters
+    TDboost2016t <- TDboost(formula = formula,
+                           data = train2016,
+                           distribution = list(name = "EDM", alpha = best_params_run[[6]]),
+                           n.trees = best_params_run[[1]],
+                           interaction.depth = round(best_params_run[[2]]), 
+                           n.minobsinnode = round(best_params_run[[3]]),
+                           shrinkage = best_params_run[[4]],
+                           bag.fraction = best_params_run[[5]],
+                           train.fraction = 1.0,
+                           cv.folds = 0,
+                           keep.data = TRUE,
+                           verbose = FALSE)
+    
+    # Predict on the evaluation data
+    preds1t <- predict.TDboost(TDboost2016t, newdata = test2016, n.trees =  best_params2015$n.trees[i], type="response")
+    
+    # Compute the RMSE for this run
+    rmse <- sqrt(mean((test2016$loss_cost - preds1t)^2))
+    
+    # Print the RMSE for this run
+    print(paste("RMSE for run", i, "of outer run", j, ":", rmse))
+    
+    # Store the RMSE and model
+    rmse_list[[j]][i] <- rmse
+    models[[j]][[i]] <- TDboost2016t
+    preds_list[[j]][[i]] <- preds1t
+  }
+  
+  # Compute the mean RMSE for this run
+  mean_rmse <- mean(rmse_list[[j]])
+  
+  # Compute the standard deviation of RMSE for this run
+  std_dev_rmse <- sd(rmse_list[[j]])
+  std_dev_rmse_list[[j]] <- std_dev_rmse
+  
+  # Print the mean RMSE and standard deviation of RMSE for this run
+  print(paste("Mean RMSE for outer run", j, ":", mean_rmse))
+  print(paste("Standard deviation of RMSE for outer run", j, ":", std_dev_rmse))
+}
+
+# Compute the mean RMSE for each run
+mean_rmse_list <- sapply(rmse_list, mean)
+
+# Find the model with the lowest mean RMSE
+mean_rmses <- sapply(rmse_list, mean)
+best_model_index <- which.min(mean_rmses)
+index <- which.min(rmse_list[[best_model_index]])
+best_model16 <- models[[best_model_index]][[index]]
+preds2016t <- preds_list[[best_model_index]][[index]]
+
+# Print the RMSE of the best model
+print(paste("RMSE of the best model:", mean_rmses[best_model_index]))
+preds2016t
+exp(best_model16$fit)
+
+mean(exp(best_model16$fit))
+mean(preds2016t)
+mean(test2016$loss_cost)
+mean(data2017$loss_cost)
+
+(rmse2016 <- sqrt(mean((test2016$loss_cost - preds2016t)^2)))
+
+summary(best_model16,
+        cBars=length(best_model16$var.names),
+        n.trees=best_model16$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=TRUE)
+
+#####2017#####
+set.seed(10)
+formula <- as.formula(loss_cost ~ Type_risk + Area + Second_driver + Vehicle_age + Power + Cylinder_capacity + Value_vehicle 
+                      + Driving_exp + Age + Type_fuel + Length + Weight)
+
+# Define the function to optimize
+optimize_function <- function(n.trees, interaction.depth, n.minobsinnode, shrinkage, bag.fraction, alpha) {
+  # Fit the model on the training set
+  model <- TDboost(formula = formula,
+                   data = train2017,
+                   distribution = list(name = "EDM", alpha = alpha),
+                   n.trees = round(n.trees), 
+                   interaction.depth = round(interaction.depth), 
+                   n.minobsinnode = round(n.minobsinnode),
+                   shrinkage = shrinkage,
+                   bag.fraction = bag.fraction,
+                   train.fraction = 1.0,
+                   cv.folds = 5,
+                   keep.data = TRUE,
+                   verbose = FALSE)
+  
+  # Return the average RMSE for optimization
+  return(list(Score = mean(model$cv.error), Pred = model$fit))
+}
+
+# Set the bounds for the hyperparameters
+bounds <- list(n.trees = c(50, 100), 
+               interaction.depth = c(1, 2), 
+               n.minobsinnode = c(5, 20), 
+               shrinkage = c(0.05, 0.3), 
+               bag.fraction = c(0.4, 0.6),
+               alpha = c(1.1, 1.999))
+
+# Initialize a data frame to store the best parameters from each run
+best_params17 <- data.frame()
+
+# Perform Bayesian optimization for 5 runs
+for(i in 1:5) {
+  opt_results <- BayesianOptimization(optimize_function, 
+                                      bounds = bounds, 
+                                      init_points = 10, 
+                                      n_iter = 1)
+  
+  # Retrieve best hyperparameters and store in the data frame
+  best_params17 <- rbind(best_params17, data.frame(run = i, t(opt_results$Best_Par)))
+}
+
+# Print the best parameters
+print(best_params17)
+
+# Write the best parameters to a CSV file
+write.csv(best_params17, file = "best_params_tdboost2017.csv", row.names = FALSE)
+
+# Load the best parameters from the CSV file
+best_params17 <- read.csv("/Users/michelle/Library/Mobile Documents/com~apple~CloudDocs/SEM A3/Tugas Akhir 1/best_params_tdboost2017.csv")
+
+# Initialize a list to store RMSE for each run
+rmse_list <- vector("list", 5)
+
+# Initialize a list to store standard deviation of RMSE for each run
+std_dev_rmse_list <- vector("list", 5)
+
+# Initialize a list to store models from each run
+models <- vector("list", 5)
+
+# Initialize a list to store predictions from each run
+preds_list <- vector("list", 5)
+
+# Iterate over the five sets of best parameters
+for (j in 1:5) {
+  best_params_run <- best_params17[best_params17$run == j, ]
+  best_params_run <- as.list(t(best_params_run[, -1]))  # Convert to list
+  
+  # Train the best model 5 times
+  for (i in 1:5) {
+    # Fit the model using the best parameters
+    TDboost2017t <- TDboost(formula = formula,
+                           data = train2017,
+                           distribution = list(name = "EDM", alpha = best_params_run[[6]]),
+                           n.trees = best_params_run[[1]],
+                           interaction.depth = round(best_params_run[[2]]), 
+                           n.minobsinnode = round(best_params_run[[3]]),
+                           shrinkage = best_params_run[[4]],
+                           bag.fraction = best_params_run[[5]],
+                           train.fraction = 1.0,
+                           cv.folds = 0,
+                           keep.data = TRUE,
+                           verbose = FALSE)
+    
+    # Predict on the evaluation data
+    preds3t <- predict.TDboost(TDboost2017t, newdata = test2017, n.trees =  best_params17$n.trees[i], type="response")
+    
+    # Compute the RMSE for this run
+    rmse <- sqrt(mean((test2017$loss_cost - preds3t)^2))
+    
+    # Print the RMSE for this run
+    print(paste("RMSE for run", i, "of outer run", j, ":", rmse))
+    
+    # Store the RMSE and model
+    rmse_list[[j]][i] <- rmse
+    models[[j]][[i]] <- TDboost2017t
+    preds_list[[j]][[i]] <- preds3t
+  }
+  
+  # Compute the mean RMSE for this run
+  mean_rmse <- mean(rmse_list[[j]])
+  
+  # Compute the standard deviation of RMSE for this run
+  std_dev_rmse <- sd(rmse_list[[j]])
+  std_dev_rmse_list[[j]] <- std_dev_rmse
+  
+  # Print the mean RMSE and standard deviation of RMSE for this run
+  print(paste("Mean RMSE for outer run", j, ":", mean_rmse))
+  print(paste("Standard deviation of RMSE for outer run", j, ":", std_dev_rmse))
+}
+
+# Compute the mean RMSE for each run
+mean_rmse_list <- sapply(rmse_list, mean)
+
+# Find the model with the lowest mean RMSE
+mean_rmses <- sapply(rmse_list, mean)
+best_model_index <- which.min(mean_rmses)
+index <- which.min(rmse_list[[best_model_index]])
+best_model17 <- models[[best_model_index]][[index]]
+preds2017t <- preds_list[[best_model_index]][[index]]
+
+# Print the RMSE of the best model
+print(paste("RMSE of the best model:", mean_rmses[best_model_index]))
+preds2017t
+exp(TDboost2017t$fit)
+
+mean(exp(best_model17$fit))
+mean(preds2017t)
+mean(data2017$loss_cost)
+mean(data2018$loss_cost)
+
+(rmse2017 <- sqrt(mean((test2017$loss_cost - preds2017t)^2)))
+
+summary(best_model17,
+        cBars=length(best_model17$var.names),
+        n.trees=best_model17$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=TRUE)
