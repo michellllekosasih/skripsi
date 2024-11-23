@@ -1,0 +1,11 @@
+premi2015 = (preds2015t+30)/0.52
+mean(premi2015)
+
+premi2016 = (preds2016t+30)/0.52
+mean(premi2016)
+
+premi2017 = (preds2017t+30)/0.52
+mean(premi2017)
+
+premi2018 = (preds2018t+30)/0.52
+mean(premi2018)
