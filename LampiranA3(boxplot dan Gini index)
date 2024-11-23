@@ -1,0 +1,135 @@
+#BOXPLOT
+#####2015#####
+group1 = test2015$loss_cost
+group2 = preds2015t
+group3 = GLMTpred2015
+data <- list(group1, group2, group3)
+
+boxplot(data,  names = c("Data asli", "TDboost","GLM Tweedie"),
+col = c("grey", "grey", "grey"), 
+border = c("black", "black", "black"),       
+ylab = "Loss_cost" ,ylim=c(0,2000))
+
+means <- sapply(data, mean)
+points(1:length(data), means, col = "red", pch = 18, cex = 2)
+text(1:length(data), means + 20, round(means, 2), col = "red", pos = 3)
+
+#####2016#####
+group1 = test2016$loss_cost
+group2 = preds2016t
+group3 = GLMTpred2016
+data <- list(group1, group2, group3)
+
+boxplot(data,  names = c("Data asli", "TDboost","GLM Tweedie"),
+        col = c("grey", "grey", "grey"),  # Set box colors
+        border = c("black", "black", "black"),        # Set border colors
+        ylab = "Loss_cost" ,ylim=c(0,2000))
+
+means <- sapply(data, mean)
+points(1:length(data), means, col = "red", pch = 18, cex = 2)
+text(1:length(data), means + 20, round(means, 2), col = "red", pos = 3)
+
+#####2017#####
+group1 = test2017$loss_cost
+group2 = preds2017t
+group3 = GLMTpred2017
+data <- list(group1, group2, group3)
+
+boxplot(data,  names = c("Data asli", "TDboost","GLM Tweedie"),
+        col = c("grey", "grey", "grey"),  # Set box colors
+        border = c("black", "black", "black"),        # Set border colors
+        ylab = "Loss_cost" ,ylim=c(0,2000))
+
+means <- sapply(data, mean)
+points(1:length(data), means, col = "red", pch = 18, cex = 2)
+text(1:length(data), means + 20, round(means, 2), col = "red", pos = 3)
+
+#####2018#####
+group1 = test2018$loss_cost
+group2 = preds2018t
+group3 = GLMTpred2018
+data <- list(group1, group2, group3)
+
+boxplot(data,  names = c("Data asli", "TDboost","GLM Tweedie"),
+        col = c("grey", "grey", "grey"),  # Set box colors
+        border = c("black", "black", "black"),        # Set border colors
+        ylab = "Loss_cost" ,ylim=c(0,2000))
+
+means <- sapply(data, mean)
+points(1:length(data), means, col = "red", pch = 18, cex = 2)
+text(1:length(data), means + 20, round(means, 2), col = "red", pos = 3)
+
+#Gini Index
+######2015#####
+P1 <- GLMTpred2015
+P2 <- preds2015t
+
+da1 <- cbind(test2015, P1, P2)
+
+# compute the Gini indices
+gg <- gini(loss = "loss_cost", score  = paste("P", 1:2, sep = ""), 
+           data = da1)
+gg
+
+# plot the Lorenz curves.
+theme_set(theme_bw())
+p = plot(gg)
+p + xlab("Premium") + ylab("Loss")
+
+######2016#####
+P1 <- GLMTpred2016
+P2 <- preds2016t
+
+da2 <- cbind(test2016, P1, P2)
+
+# compute the Gini indices
+gg2 <- gini(loss = "loss_cost", score  = paste("P", 1:2, sep = ""), 
+           data = da2)
+gg2
+
+# plot the Lorenz curves.
+theme_set(theme_bw())
+p = plot(gg2)
+p + xlab("Premium") + ylab("Loss")
+
+######2017#####
+P1 <- GLMTpred2017
+P2 <- preds2017t
+
+da3 <- cbind(test2017, P1, P2)
+
+# compute the Gini indices
+gg3 <- gini(loss = "loss_cost", score  = paste("P", 1:2, sep = ""), 
+            data = da3)
+gg3
+
+# plot the Lorenz curves.
+theme_set(theme_bw())
+p = plot(gg3)
+p + xlab("Premium") + ylab("Loss")
+
+######2018#####
+P1 <- GLMTpred2018
+P2 <- preds2018t
+
+da4 <- cbind(test2018, P1, P2)
+
+# compute the Gini indices
+gg4 <- gini(loss = "loss_cost", score  = paste("P", 1:2, sep = ""), 
+            data = da4)
+gg4
+
+# plot the Lorenz curves.
+theme_set(theme_bw())
+p = plot(gg4)
+p + xlab("Premium") + ylab("Loss")
+
+
+
+
+
+
+
+
+
+
